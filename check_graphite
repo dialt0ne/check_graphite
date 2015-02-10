@@ -10,8 +10,8 @@ Based on the original plugin from disquis:
 :license: Apache License 2.0, see LICENSE for more details.
 
  Can be tested like:
- ./files/icinga/check_graphite --url http://graphite.wikimedia.org check_threshold
-   <metric-name> --from 15min -C 1 -W 2 --under
+ ./files/icinga/check_graphite --url http://graphite.wikimedia.org
+    check_threshold <metric-name> --from 15min -C 1 -W 2 --under
 '''
 
 import os
@@ -26,10 +26,12 @@ import re
 try:
     # python 3.x compat
     from urlparse import urlparse
+    assert urlparse
 except ImportError:
     from urllib.parse import urlparse
 try:
     from urllib.parse import urlencode
+    assert urlencode
 except ImportError:
     from urllib import urlencode
 
@@ -111,11 +113,12 @@ class GraphiteCheck(object):
                 (e.code, full_url))
         except urllib2.URLError as e:
             raise NagiosException(
-                'UNKNOWN', 'Could not reach the graphite server at %s, reason: %s' %
-                (full_url, e.reason[1]))
+                'UNKNOWN',
+                'Could not reach the graphite server at %s, reason: %s' %
+                (full_url, e.reason[1])
+            )
 
         return json.load(response)
-
 
     @classmethod
     def create_parser(cls, parser):
@@ -188,7 +191,8 @@ class Threshold(GraphiteCheck):
             dest='percentage',
             default=1,
             type=int,
-            help='Number of datapoints above or below threshold that will raise the alarm')
+            help=('Number of datapoints above or below '
+                  'threshold that will raise the alarm'))
         return p
 
     def get_all(self, args):
@@ -208,7 +212,8 @@ class Threshold(GraphiteCheck):
                 args._from)
         if m.group(2) not in self._accepted_time_defs:
             raise ValueError(
-                'The unit specification for --from should be one of the following: %s' %
+                ('The unit specification for --from '
+                 'should be one of the following: %s') %
                 ','.join(
                     self._accepted_time_defs))
 
@@ -286,7 +291,8 @@ class Threshold(GraphiteCheck):
 class SeriesThreshold(Threshold):
 
     '''
-    Checks a series of metrics to see if they individually are within acceptable thresholds
+    Checks a series of metrics to see if they
+    individually are within acceptable thresholds
     '''
     parser_name = 'check_series_threshold'
 
@@ -296,7 +302,8 @@ class SeriesThreshold(Threshold):
 
         :param result: A data structure (typically, a list)
                        with graphite datapoints
-        :returns: A dictionary with key target and value categorized datapoints list
+        :returns: A dictionary with key target and
+                  value categorized datapoints list
         '''
         seriespoints = {}
         for series in result:
@@ -325,19 +332,26 @@ class SeriesThreshold(Threshold):
         :returns: Message string containing the status.
         :raises: NagiosException on non-OK statuses
         '''
-        messages = {'OK': [], 'CRITICAL': [], 'WARNING':[]}
+        messages = {'OK': [], 'CRITICAL': [], 'WARNING': []}
         for target, datapoints in seriespoints.iteritems():
             if datapoints['_total'] == 0:
-                raise NagiosException('UNKNOWN', 'No valid datapoints found for %s' % target)
+                raise NagiosException(
+                    'UNKNOWN',
+                    'No valid datapoints found for %s' % target,
+                )
 
             lengths = {}
             t = datapoints['_total']
             for key in NagiosException.NAGIOS_STATUSES.keys():
                 lengths[key] = len(datapoints[key])
-                # Very simple count, no timeseries evaluation, no flap detection.
+                # Very simple count, no timeseries evaluation,
+                #no flap detection.
             if t < lengths['UNKNOWN']:
                 raise NagiosException(
-                    'UNKNOWN', 'More than half of the datapoints for %s are undefined' % target)
+                    'UNKNOWN',
+                    ('More than half of the datapoints '
+                     'for %s are undefined') % target
+                )
             for key in ['CRITICAL', 'WARNING']:
                 if lengths[key] >= t * self.perc / 100.0:
                     perc = lengths[key] * 100.0 / t
@@ -346,9 +360,9 @@ class SeriesThreshold(Threshold):
             else:
                 messages['OK'].append((target, 100.0))
 
-        report = 'above'
-        if self.under:
-            report = 'under'
+        #report = 'above'
+        #if self.under:
+        #    report = 'under'
 
         message = self.format_message(messages)
         if messages['CRITICAL']:
@@ -364,18 +378,26 @@ class SeriesThreshold(Threshold):
         sign = '<' if self.under else '>'
         message = ''
         if messages['CRITICAL']:
-            message += ' '.join(['%s (%s%3.2f%%)' % (k, sign, v) for k, v in messages['CRITICAL']])
+            message += ' '.join([
+                '%s (%s%3.2f%%)' % (k, sign, v)
+                for k, v in messages['CRITICAL']
+            ])
         if messages['WARNING']:
             if messages['CRITICAL']:
-                message += ' WARN: ' # only add WARN: if there are also CRIT messages
-            message += ' '.join(['%s (%s%3.2f%%)' % (k, sign, v) for k, v in messages['WARNING']])
+                # only add WARN: if there are also CRIT messages
+                message += ' WARN: '
+            message += ' '.join([
+                '%s (%s%3.2f%%)' % (k, sign, v)
+                for k, v in messages['WARNING']
+            ])
         return message
 
 
 class Anomaly(GraphiteCheck):
 
     '''
-    Checks if the metric is out of the forecasted bounds for a number of times in the last iterations
+    Checks if the metric is out of the forecasted bounds
+    for a number of times in the last iterations
     '''
     parser_name = 'check_anomaly'
 
@@ -470,13 +492,15 @@ sampling (we will still require 1w of data)''',
                 'UNKNOWN', 'More than half of the datapoints are undefined')
 
         # Simple check, with basic flap detection
-        crit = (h >= self.crit) or (l >= self.crit)
-        crit_flap = (h >= self.crit) and (l >= self.crit)
+        #crit = (h >= self.crit) or (l >= self.crit)
+        #crit_flap = (h >= self.crit) and (l >= self.crit)
         if (h >= self.crit) or (l >= self.crit):
             if (h >= self.crit) and (l >= self.crit):
                 raise NagiosException(
                     'UNKNOWN',
-                    'Service is critically flapping: %s data below and %s above the confidence bounds' % (h, l))
+                    ('Service is critically flapping: %s data below '
+                     'and %s above the confidence bounds') % (h, l)
+                )
 
             if self.over and h < self.crit:
                 return 'No anomaly detected'
@@ -484,16 +508,19 @@ sampling (we will still require 1w of data)''',
             if self.under and l < self.crit:
                 return 'No anomaly detected'
 
-
             raise NagiosException(
-                'CRITICAL', 'Anomaly detected: %s data above and %s below the confidence bounds' %
-                (h, l))
+                'CRITICAL',
+                ('Anomaly detected: %s data above and '
+                 '%s below the confidence bounds') % (h, l)
+            )
 
         if (h >= self.warn) or (l >= self.warn):
             if (h >= self.warn) and (l >= self.warn):
                 raise NagiosException(
                     'UNKNOWN',
-                    'Service is flapping: %s data below and %s above the confidence bounds' % (h, l))
+                    ('Service is flapping: %s data below and '
+                     '%s above the confidence bounds') % (h, l)
+                )
             if self.over and h < self.warn:
                 return 'No anomaly detected'
 
@@ -501,8 +528,10 @@ sampling (we will still require 1w of data)''',
                 return 'No anomaly detected'
 
             raise NagiosException(
-                'WARNING', 'Anomaly detected: %s data above and %s below the confidence bounds' %
-                (h, l))
+                'WARNING',
+                ('Anomaly detected: %s data above and '
+                 '%s below the confidence bounds') % (h, l)
+            )
 
         return 'No anomaly detected'
 
@@ -511,22 +540,23 @@ def main():
     '''
     Controller for the graphite fetching plugin.
 
-    You can build a few different type of checks, both traditional nagios checks
-    and anomaly detection ones.
+    You can build a few different type of checks, both traditional
+    nagios checks and anomaly detection ones.
 
     Examples:
 
-    Check if a metric exceeds a certain value 10 times in the last 20 minutes:
+    Check if a metric exceeds a certain value 10 times in the
+    last 20 minutes:
 
     ./check_graphite --url http://some-graphite-host \
            check_threshold my.beloved.metric  --from -20minutes \
            --threshold 100 --over -C 10 -W 5
 
-    Check if a metric has exceeded its holt-winters confidence bands 5% of the
-    times over the last 500 checks
+    Check if a metric has exceeded its holt-winters confidence bands
+    5% of the times over the last 500 checks
 
-    ./check_graphyte.py --url http://some-graphite-host  \
-          check_anomaly my.beloved.metric --check_window 500 -C 5 -W 1
+    ./check_graphyte.py --url http://some-graphite-host \
+        check_anomaly my.beloved.metric --check_window 500 -C 5 -W 1
 
     '''
     parser = argparse.ArgumentParser(description=__doc__)
@@ -535,11 +565,11 @@ def main():
         help='use with --help for additional help',
         dest='check_type')
 
-    threshold = Threshold.create_parser(subparsers)
+    Threshold.create_parser(subparsers)
 
-    series_threshold = SeriesThreshold.create_parser(subparsers)
+    SeriesThreshold.create_parser(subparsers)
 
-    anomaly = Anomaly.create_parser(subparsers)
+    Anomaly.create_parser(subparsers)
 
     parser.add_argument('-U', '--url', dest='url',
                         default=os.environ.get(
