@@ -7,7 +7,7 @@ Script based on the work done by [disqus](https://github.com/disqus/nagios-plugi
 
 ## Usage
 
-General:
+### general:
 
 ```
 $ ./check_graphite -h
@@ -41,7 +41,7 @@ check_type:
                         for a number of times in the last iterations
 ```
 
-check_threshold:
+### check_threshold:
 
 ```
 $ ./check_graphite check_threshold -h
@@ -66,7 +66,7 @@ optional arguments:
                         will raise the alarm
 ```
 
-check_series_threshold:
+### check_series_threshold:
 
 ```
 $ ./check_graphite check_series_threshold -h
@@ -92,7 +92,7 @@ optional arguments:
                         will raise the alarm
 ```
 
-check_anomaly:
+### check_anomaly:
 
 ```
 $ ./check_graphite check_anomaly -h
