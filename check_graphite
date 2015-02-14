@@ -412,6 +412,12 @@ class Anomaly(GraphiteCheck):
 sampling (we will still require 1w of data)''',
             default=20)
         p.add_argument(
+            '--delta',
+            dest='delta',
+            type=int,
+            help='Holt-Winters delta',
+            default=5)
+        p.add_argument(
             '--over',
             dest='over',
             action='store_true',
@@ -436,8 +442,10 @@ sampling (we will still require 1w of data)''',
         self.params = [('format', 'json')]
         for target in self.targets:
             self.params.append(('target', target))
-            self.params.append(
-                ('target', 'holtWintersConfidenceBands(%s, 5)' % target))
+            self.params.append((
+                'target',
+                'holtWintersConfidenceBands(%s, %s)' % (target, args.delta),
+            ))
         self.check_window = args.check_window
         self.warn = args.warn
         self.crit = args.crit

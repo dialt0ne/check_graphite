@@ -97,8 +97,8 @@ optional arguments:
 ```
 $ ./check_graphite check_anomaly -h
 usage: check_graphite check_anomaly [-h] [-C CRIT] [-W WARN]
-                                    [--check_window CHECK_WINDOW] [--over]
-                                    [--under]
+                                    [--check_window CHECK_WINDOW]
+                                    [--delta DELTA] [--over] [--under]
                                     METRIC
 
 positional arguments:
@@ -113,6 +113,7 @@ optional arguments:
   --check_window CHECK_WINDOW
                         How many datapoints to consider in the anomaly
                         detection sampling (we will still require 1w of data)
+  --delta DELTA         Holt-Winters delta
   --over                If alarms should happen when we are above normal
                         values
   --under               If alarms should happen when we are below normal
